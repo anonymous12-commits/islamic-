@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>🕌 Islamic Dhikr Counter</title>
+  <style>
+    body {
+      background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
+      color: white;
+      text-align: center;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 30px;
+      transition: background 0.5s, color 0.5s;
+    }
+    h1 {
+      color: gold;
+    }
+    select, button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 10px 5px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #counter {
+      font-size: 48px;
+      margin: 20px;
+      color: #00ffc3;
+    }
+    .control-btn {
+      background-color: #00d9a6;
+      color: black;
+    }
+    .speed-btn {
+      background-color: #ffc107;
+      color: black;
+      font-weight: bold;
+    }
+    .speed-btn.active {
+      background-color: #007bff;
+      color: white;
+    }
+    .night-mode {
+      background: linear-gradient(to bottom, #000000, #222222);
+      color: #ffffff;
+    }
+    .night-mode .control-btn {
+      background-color: #555;
+      color: white;
+    }
+    .night-mode .speed-btn {
+      background-color: #999;
+      color: white;
+    }
+    #surahDisplay {
+      margin-top: 20px;
+      font-size: 28px;
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🕌 Islamic Dhikr Counter</h1>
+
+  <label for="dhikr">Choose Dhikr:</label><br>
+  <select id="dhikr" onchange="loadDhikr()">
+    <option>SubhanAllah (33)</option>
+    <option>Alhamdulillah (33)</option>
+    <option>Allahu Akbar (34)</option>
+    <option>La ilaha illallah (33)</option>
+    <option>La Hawla Wala Quwwata illa Billah (99)</option>
+    <option>Astaghfirullah (3000)</option>
+    <option>Surah Naas (3)</option>
+    <option>Surah Falaq (3)</option>
+    <option>Surah Ikhlaas (3)</option>
+    <option>Allahumma inni As'aluka Min Fadlika wa Rahmatika fa Innahu la Yamlikuha illa Anta (99)</option>
+    <option>Allahumma Rabbana ajirna min khizyid-dunya wal-akhirah (99)</option>
+    <option>Allahumma ajirni minan naar (99)</option>
+    <option>Allahumma inni asalukal Jannah (99)</option>
+    <option>La ilaha illa anta subhanaka inni kuntu minaz-zalimin (99)</option>
+    <option>Allahumma inni as'aluka husnal khatimah (99)</option>
+    <option>Allahumma inni asaluka al Jannah (99)</option>
+    <option>Allahumma ajirni minan naar 2 (99)</option>
+    <option>Allahumma inni asaluka al afiyah (99)</option>
+    <option>Allahumma inni asaluka al akhirah (99)</option>
+    <option>Allahumma inni asaluka al afwa wal afiyah (99)</option>
+    <option>Allahumma innaka afuwwun tuhibbul afwa fa fu anni (99)</option>
+    <option>Allahumma auzubika min azaabil qabr (99)</option>
+  </select>
+
+  <div id="counter">0 / 33</div>
+  <div id="surahDisplay"></div>
+
+  <div>
+    <button class="control-btn" onclick="startCount()">▶️ Start</button>
+    <button class="control-btn" onclick="pauseCount()">⏸️ Pause</button>
+    <button class="control-btn" onclick="resumeCount()">🔁 Resume</button>
+    <button class="control-btn" onclick="resetCount()">🔄 Reset</button>
+    <button class="control-btn" onclick="toggleNightMode()">🌙 Night Mode</button>
+    <button class="control-btn" onclick="startAutoPlayAll()">✨ Auto Play All</button>
+  </div>
+
+  <div>
+    <button id="cycleSpeedBtn" class="speed-btn" onclick="cycleSpeed()">Speed: 1×</button>
+  </div>
+
+  <script>
+    const dhikrCounts = {
+      'SubhanAllah (33)': 33,
+      'Alhamdulillah (33)': 33,
+      'Allahu Akbar (34)': 34,
+      'La ilaha illallah (33)': 33,
+      'La Hawla Wala Quwwata illa Billah (99)': 99,
+      'Astaghfirullah (3000)': 3000,
+      'Surah Naas (3)': 3,
+      'Surah Falaq (3)': 3,
+      'Surah Ikhlaas (3)': 3,
+      'Allahumma inni As\'aluka Min Fadlika wa Rahmatika fa Innahu la Yamlikuha illa Anta (99)': 99,
+      'Allahumma Rabbana ajirna min khizyid-dunya wal-akhirah (99)': 99,
+      'Allahumma ajirni minan naar (99)': 99,
+      'Allahumma inni asalukal Jannah (99)': 99,
+      'La ilaha illa anta subhanaka inni kuntu minaz-zalimin (99)': 99,
+      'Allahumma inni as\'aluka husnal khatimah (99)': 99,
+      'Allahumma inni asaluka al Jannah (99)': 99,
+      'Allahumma ajirni minan naar 2 (99)': 99,
+      'Allahumma inni asaluka al afiyah (99)': 99,
+      'Allahumma inni asaluka al akhirah (99)': 99,
+      'Allahumma inni asaluka al afwa wal afiyah (99)': 99,
+      'Allahumma innaka afuwwun tuhibbul afwa fa fu anni (99)': 99,
+      'Allahumma auzubika min azaabil qabr (99)': 99
+    };
+
+    let currentCount = 0;
+    let maxCount = 33;
+    let interval;
+    let isPaused = false;
+    let speedLevels = [0.1, 0.13, 0.16, 0.19, 0.22, 0.25, 0.5, 1, 1.5, 2, 2.5, 3];
+    let speedIndex = 6;
+
+    function loadDhikr() {
+      const selected = document.getElementById('dhikr').value;
+      maxCount = dhikrCounts[selected] || 33;
+      currentCount = 0;
+      updateCounter();
+
+      const surahText = {
+        'Surah Naas (3)': `بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ<br>
+قُلْ أَعُوذُ بِرَبِّ النَّاسِ<br>
+مَلِكِ النَّاسِ<br>
+إِلَـٰهِ النَّاسِ<br>
+مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ<br>
+الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ<br>
+مِنَ الْجِنَّةِ وَالنَّاسِ`,
+
+        'Surah Falaq (3)': `بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ<br>
+قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ<br>
+مِن شَرِّ مَا خَلَقَ<br>
+وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ<br>
+وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ<br>
+وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ`,
+
+        'Surah Ikhlaas (3)': `بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ<br>
+قُلْ هُوَ اللَّهُ أَحَدٌ<br>
+اللَّهُ الصَّمَدُ<br>
+لَمْ يَلِدْ وَلَمْ يُولَدْ<br>
+وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ`
+      };
+
+      document.getElementById('surahDisplay').innerHTML = surahText[selected] || '';
+    }
+
+    function updateCounter() {
+      document.getElementById('counter').innerText = currentCount + ' / ' + maxCount;
+    }
+
+    function startCount() {
+      if (interval) clearInterval(interval);
+      isPaused = false;
+      interval = setInterval(() => {
+        if (!isPaused && currentCount < maxCount) {
+          currentCount++;
+          updateCounter();
+        } else if (currentCount >= maxCount) {
+          clearInterval(interval);
+        }
+      }, 1000 / speedLevels[speedIndex]);
+    }
+
+    function pauseCount() {
+      isPaused = true;
+    }
+
+    function resumeCount() {
+      isPaused = false;
+    }
+
+    function resetCount() {
+      clearInterval(interval);
+      currentCount = 0;
+      updateCounter();
+    }
+
+    function toggleNightMode() {
+      document.body.classList.toggle('night-mode');
+    }
+
+    function startAutoPlayAll() {
+      const options = document.getElementById('dhikr').options;
+      let i = 0;
+      function playNext() {
+        if (i >= options.length) return;
+        document.getElementById('dhikr').selectedIndex = i;
+        loadDhikr();
+        startCount();
+        const check = setInterval(() => {
+          if (currentCount >= maxCount) {
+            clearInterval(check);
+            i++;
+            playNext();
+          }
+        }, 500);
+      }
+      playNext();
+    }
+
+    function cycleSpeed() {
+      speedIndex = (speedIndex + 1) % speedLevels.length;
+      const btn = document.getElementById('cycleSpeedBtn');
+      btn.innerText = "Speed: " + speedLevels[speedIndex] + "×";
+      btn.classList.add("active");
+      setTimeout(() => btn.classList.remove("active"), 500);
+    }
+
+    loadDhikr();
+  </script>
+</body>
+</html>
